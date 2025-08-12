@@ -1,0 +1,12 @@
+{
+  "default_model": "Qwen/Qwen-Image",
+  "timeout": 720,
+  "image_download_timeout": 120,
+  "default_prompt": "A beautiful landscape",
+  "default_negative_prompt": "lowres, bad anatomy, bad hands, text, error, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, normal quality, jpeg artifacts, signature, watermark, username, blurry",
+  "default_width": 512,
+  "default_height": 512,
+  "default_seed": -1,
+  "default_steps": 30,
+  "default_guidance": 3.5
+} 

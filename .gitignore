@@ -1,0 +1,17 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*.class
+
+# macOS
+.DS_Store
+
+# Env / tokens / outputs
+.qwen_token
+*.jpg
+*.png
+*.jpeg
+
+# Editors
+.vscode/
+.idea/
