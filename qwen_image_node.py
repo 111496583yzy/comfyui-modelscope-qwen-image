@@ -21,18 +21,43 @@ def load_config():
             "default_prompt": "A beautiful landscape"
         }
 
+# New helper to persist config updates
+def save_config(config: dict) -> bool:
+    config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+    try:
+        with open(config_path, 'w', encoding='utf-8') as f:
+            json.dump(config, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception as e:
+        print(f"保存配置失败: {e}")
+        return False
+
 def save_api_token(token):
     token_path = os.path.join(os.path.dirname(__file__), '.qwen_token')
     try:
         with open(token_path, 'w', encoding='utf-8') as f:
             f.write(token)
-        return True
     except Exception as e:
-        print(f"保存token失败: {e}")
+        print(f"保存token失败(.qwen_token): {e}")
+    try:
+        cfg = load_config()
+        cfg["api_token"] = token
+        if save_config(cfg):
+            return True
+        return False
+    except Exception as e:
+        print(f"保存token失败(config.json): {e}")
         return False
 
 def load_api_token():
     token_path = os.path.join(os.path.dirname(__file__), '.qwen_token')
+    try:
+        cfg = load_config()
+        token_from_cfg = cfg.get("api_token", "").strip()
+        if token_from_cfg:
+            return token_from_cfg
+    except Exception as e:
+        print(f"读取config.json中的token失败: {e}")
     try:
         if os.path.exists(token_path):
             with open(token_path, 'r', encoding='utf-8') as f:
