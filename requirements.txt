@@ -1,0 +1,17 @@
+# Qwen-Image ComfyUI Plugin Requirements
+
+# Core dependencies (usually already available in ComfyUI)
+requests>=2.25.0
+pillow>=8.0.0
+torch>=1.9.0
+numpy>=1.20.0
+
+# Additional dependencies for vision functionality
+openai>=1.0.0
+
+# Network and proxy support
+httpx[socks]>=0.24.0
+socksio>=1.0.0
+
+# Optional dependencies for enhanced functionality
+# pydantic-settings  # For advanced configuration management

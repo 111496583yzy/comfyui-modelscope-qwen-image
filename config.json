@@ -8,5 +8,11 @@
   "default_height": 512,
   "default_seed": -1,
   "default_steps": 30,
-  "default_guidance": 3.5
+  "default_guidance": 3.5,
+  "default_vision_model": "stepfun-ai/step3",
+  "default_vision_prompt": "请详细描述这幅图像的内容，包括主要对象、场景、颜色、构图等细节。",
+  "default_text_model": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+  "default_system_prompt": "You are a helpful assistant.",
+  "default_user_prompt": "你好，请介绍一下你自己。",
+  "api_token": ""
 }

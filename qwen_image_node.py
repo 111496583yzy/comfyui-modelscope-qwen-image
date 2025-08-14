@@ -6,7 +6,6 @@ import numpy as np
 from PIL import Image
 from io import BytesIO
 import os
-import folder_paths
 
 def load_config():
     config_path = os.path.join(os.path.dirname(__file__), 'config.json')
@@ -21,7 +20,6 @@ def load_config():
             "default_prompt": "A beautiful landscape"
         }
 
-# New helper to persist config updates
 def save_config(config: dict) -> bool:
     config_path = os.path.join(os.path.dirname(__file__), 'config.json')
     try:
@@ -249,4 +247,4 @@ NODE_CLASS_MAPPINGS = {
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "QwenImageNode": "Qwen-Image 生图节点"
-} 
+}
