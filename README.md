@@ -50,6 +50,10 @@ git clone https://github.com/111496583yzy/comfyui-modelscope-qwen-image.git comf
 - **api_token**: 魔搭API Token (首次填写后会自动保存)
 - **model**: 模型名称（默认为 "Qwen/Qwen-Image-Edit"）
 - **negative_prompt**: 负向提示词（可选）
+- **width/height**: 图像宽高（默认512x512，范围64-1664）
+- **steps**: 采样步数（范围1-100，默认30）
+- **guidance**: 引导系数（范围1.5-20.0，默认3.5）
+- **seed**: 随机种子（-1表示使用随机种子，0-2147483647为固定种子）
 
 ## 工作流示例
 
@@ -71,6 +75,7 @@ git clone https://github.com/111496583yzy/comfyui-modelscope-qwen-image.git comf
 - API 调用需要网络连接
 - 高峰时期可能需要等待较长时间
 - 请遵守魔搭社区的使用政策
+- 如遇到错误代码429，表示请求过多，需要等待一段时间后重试
 
 ## License
 
