@@ -6,6 +6,8 @@ import numpy as np
 from PIL import Image
 from io import BytesIO
 import os
+import folder_paths
+import base64
 
 def load_config():
     config_path = os.path.join(os.path.dirname(__file__), 'config.json')
@@ -241,10 +243,169 @@ class QwenImageNode:
             error_tensor = torch.from_numpy(error_np)[None,]
             return (error_tensor,)
 
+class QwenImageEditNode:
+    def __init__(self):
+        pass
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        config = load_config()
+        saved_token = load_api_token()
+        return {
+            "required": {
+                "image": ("IMAGE",),
+                "prompt": ("STRING", {
+                    "multiline": True,
+                    "default": "修改图片中的内容"
+                }),
+                "api_token": ("STRING", {
+                    "default": saved_token,
+                    "placeholder": "请输入您的魔搭API Token"
+                }),
+            },
+            "optional": {
+                "model": ("STRING", {
+                    "default": "Qwen/Qwen-Image-Edit"
+                }),
+                "negative_prompt": ("STRING", {
+                    "multiline": True,
+                    "default": ""
+                }),
+            }
+        }
+
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("edited_image",)
+    FUNCTION = "edit_image"
+    CATEGORY = "QwenImage"
+
+    def image_to_base64(self, image_tensor):
+        # 将 tensor 转换为 PIL Image
+        i = 255. * image_tensor.cpu().numpy()
+        img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
+        buffered = BytesIO()
+        img.save(buffered, format="PNG")
+        img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+        return img_str
+
+    def edit_image(self, image, prompt, api_token, model="Qwen/Qwen-Image-Edit", negative_prompt=""):
+        config = load_config()
+        if not api_token or api_token.strip() == "":
+            raise Exception("请输入有效的API Token")
+        saved_token = load_api_token()
+        if api_token != saved_token:
+            if save_api_token(api_token):
+                print("✅ API Token已自动保存")
+            else:
+                print("⚠️ API Token保存失败，但不影响当前使用")
+
+        try:
+            # 确保我们只处理一张图片（取第一张）
+            if len(image.shape) == 4:
+                image = image[0]
+            
+            # 将图像转换为base64
+            image_b64 = self.image_to_base64(image)
+            image_data = f"data:image/png;base64,{image_b64}"
+            
+            url = 'https://api-inference.modelscope.cn/v1/images/generations'
+            payload = {
+                'model': model,
+                'prompt': prompt,
+                'image': image_data
+            }
+            
+            if negative_prompt.strip():
+                payload['negative_prompt'] = negative_prompt
+                print(f"🚫 负向提示词: {negative_prompt}")
+                
+            headers = {
+                'Authorization': f'Bearer {api_token}',
+                'Content-Type': 'application/json',
+                'X-ModelScope-Async-Mode': 'true'
+            }
+            
+            print(f"🖼️ 开始编辑图片...")
+            print(f"✏️ 编辑提示: {prompt}")
+            
+            submission_response = requests.post(
+                url,
+                data=json.dumps(payload, ensure_ascii=False).encode('utf-8'),
+                headers=headers,
+                timeout=config.get("timeout", 60)
+            )
+            
+            if submission_response.status_code != 200:
+                raise Exception(f"API请求失败: {submission_response.status_code}, {submission_response.text}")
+                
+            submission_json = submission_response.json()
+            image_url = None
+            
+            if 'task_id' in submission_json:
+                task_id = submission_json['task_id']
+                print(f"🕒 已提交任务，任务ID: {task_id}，开始轮询...")
+                poll_start = time.time()
+                max_wait_seconds = max(60, config.get('timeout', 720))
+                
+                while True:
+                    task_resp = requests.get(
+                        f"https://api-inference.modelscope.cn/v1/tasks/{task_id}",
+                        headers={
+                            'Authorization': f'Bearer {api_token}',
+                            'X-ModelScope-Task-Type': 'image_generation'
+                        },
+                        timeout=config.get("image_download_timeout", 120)
+                    )
+                    
+                    if task_resp.status_code != 200:
+                        raise Exception(f"任务查询失败: {task_resp.status_code}, {task_resp.text}")
+                        
+                    task_data = task_resp.json()
+                    status = task_data.get('task_status')
+                    
+                    if status == 'SUCCEED':
+                        output_images = task_data.get('output_images') or []
+                        if not output_images:
+                            raise Exception("任务成功但未返回图片URL")
+                        image_url = output_images[0]
+                        print("✅ 任务完成，开始下载编辑后的图片...")
+                        break
+                        
+                    if status == 'FAILED':
+                        raise Exception(f"任务失败: {task_data}")
+                        
+                    if time.time() - poll_start > max_wait_seconds:
+                        raise Exception("任务轮询超时，请稍后重试或降低并发")
+                        
+                    time.sleep(5)
+            else:
+                raise Exception(f"未识别的API返回格式: {submission_json}")
+                
+            img_response = requests.get(image_url, timeout=config.get("image_download_timeout", 30))
+            if img_response.status_code != 200:
+                raise Exception(f"图片下载失败: {img_response.status_code}")
+                
+            pil_image = Image.open(BytesIO(img_response.content))
+            if pil_image.mode != 'RGB':
+                pil_image = pil_image.convert('RGB')
+                
+            image_np = np.array(pil_image).astype(np.float32) / 255.0
+            image_tensor = torch.from_numpy(image_np)[None,]
+            
+            print(f"🎉 图片编辑完成！")
+            return (image_tensor,)
+            
+        except Exception as e:
+            print(f"Qwen-Image-Edit API调用失败: {str(e)}")
+            # 返回原图像作为错误回退
+            return (image.unsqueeze(0),)
+
 NODE_CLASS_MAPPINGS = {
-    "QwenImageNode": QwenImageNode
+    "QwenImageNode": QwenImageNode,
+    "QwenImageEditNode": QwenImageEditNode
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "QwenImageNode": "Qwen-Image 生图节点"
+    "QwenImageNode": "Qwen-Image 生图节点",
+    "QwenImageEditNode": "Qwen-Image 图像编辑节点"
 }
