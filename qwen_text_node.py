@@ -109,6 +109,11 @@ class QwenTextNode:
                 "stream": ("BOOLEAN", {
                     "default": True
                 }),
+                "seed": ("INT", {
+                    "default": config.get("default_text_seed", -1),
+                    "min": -1,
+                    "max": 2147483647
+                }),
             }
         }
 
@@ -117,7 +122,7 @@ class QwenTextNode:
     FUNCTION = "generate_text"
     CATEGORY = "QwenImage"
 
-    def generate_text(self, user_prompt="", api_token="", system_prompt="You are a helpful assistant.", model="Qwen/Qwen3-Coder-480B-A35B-Instruct", max_tokens=2000, temperature=0.7, stream=True, error_message=""):
+    def generate_text(self, user_prompt="", api_token="", system_prompt="You are a helpful assistant.", model="Qwen/Qwen3-Coder-480B-A35B-Instruct", max_tokens=2000, temperature=0.7, stream=True, seed=-1, error_message=""):
         if not OPENAI_AVAILABLE:
             return ("请先安装openai库: pip install openai",)
         
@@ -142,6 +147,15 @@ class QwenTextNode:
             print(f"📊 最大tokens: {max_tokens}")
             print(f"⚡ 流式输出: {stream}")
             
+            # 处理随机种子
+            if seed != -1:
+                print(f"🎯 使用指定种子: {seed}")
+            else:
+                import random
+                random_seed = random.randint(0, 2147483647)
+                print(f"🎲 使用随机种子: {random_seed}")
+                seed = random_seed
+            
             client = OpenAI(
                 base_url='https://api-inference.modelscope.cn/v1',
                 api_key=api_token
@@ -165,7 +179,8 @@ class QwenTextNode:
                 messages=messages,
                 max_tokens=max_tokens,
                 temperature=temperature,
-                stream=stream
+                stream=stream,
+                seed=seed
             )
             
             if stream:

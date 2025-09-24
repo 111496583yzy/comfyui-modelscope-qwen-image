@@ -130,6 +130,11 @@ class QwenVisionNode:
                     "max": 2.0,
                     "step": 0.1
                 }),
+                "seed": ("INT", {
+                    "default": config.get("default_vision_seed", -1),
+                    "min": -1,
+                    "max": 2147483647
+                }),
             }
         }
 
@@ -138,7 +143,7 @@ class QwenVisionNode:
     FUNCTION = "analyze_image"
     CATEGORY = "QwenImage"
 
-    def analyze_image(self, image=None, prompt="", api_token="", model="stepfun-ai/step3", max_tokens=1000, temperature=0.7, error_message=""):
+    def analyze_image(self, image=None, prompt="", api_token="", model="stepfun-ai/step3", max_tokens=1000, temperature=0.7, seed=-1, error_message=""):
         if not OPENAI_AVAILABLE:
             return ("请先安装openai库: pip install openai",)
         
@@ -158,6 +163,15 @@ class QwenVisionNode:
             print(f"🔍 开始分析图像...")
             print(f"📝 提示词: {prompt}")
             print(f"🤖 模型: {model}")
+            
+            # 处理随机种子
+            if seed != -1:
+                print(f"🎯 使用指定种子: {seed}")
+            else:
+                import random
+                random_seed = random.randint(0, 2147483647)
+                print(f"🎲 使用随机种子: {random_seed}")
+                seed = random_seed
             
             image_url = tensor_to_base64_url(image)
             print(f"🖼️ 图像已转换为base64格式")
@@ -187,7 +201,8 @@ class QwenVisionNode:
                 messages=messages,
                 max_tokens=max_tokens,
                 temperature=temperature,
-                stream=False
+                stream=False,
+                seed=seed
             )
             
             description = response.choices[0].message.content
