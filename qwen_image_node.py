@@ -6,7 +6,11 @@ import numpy as np
 from PIL import Image
 from io import BytesIO
 import os
-import folder_paths
+try:
+    import folder_paths
+except ImportError:
+    # folder_paths 只在 ComfyUI 环境中可用
+    folder_paths = None
 import base64
 import tempfile
 

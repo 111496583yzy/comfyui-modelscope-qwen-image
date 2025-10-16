@@ -10,6 +10,9 @@
 - 支持负向提示词
 - 支持 API Token 保存（首次填写后自动保存到 config.json）
 - 支持图像编辑功能 (Qwen-Image-Edit 模型)
+- 支持目标检测功能 (Qwen2.5-VL 模型)
+- 支持边界框检测和可视化
+- 支持与 SAM2 等分割节点配合使用
 
 ## 安装
 
@@ -55,6 +58,32 @@ git clone https://github.com/111496583yzy/comfyui-modelscope-qwen-image.git comf
 - **guidance**: 引导系数（范围1.5-20.0，默认3.5）
 - **seed**: 随机种子（-1表示使用随机种子，0-2147483647为固定种子）
 
+### 4. Qwen2.5-VL 目标检测节点
+
+#### 4.1 Qwen2.5-VL API 配置节点
+
+在 ComfyUI 编辑器中添加 `Qwen2.5-VL API Configuration` 节点，设置以下参数：
+
+- **base_url**: API服务的基础URL（默认：https://api-inference.modelscope.cn/v1）
+- **api_key**: API密钥（必需）
+- **model_name**: 模型名称（如：Qwen/Qwen2.5-VL-72B-Instruct）
+- **timeout**: 请求超时时间（秒）
+
+#### 4.2 Qwen2.5-VL API 目标检测节点
+
+在 ComfyUI 编辑器中添加 `Qwen2.5-VL API Object Detection` 节点，设置以下参数：
+
+- **qwen_api_config**: 连接上述配置节点的输出
+- **image**: 要检测的图像
+- **target**: 要检测的目标对象（如 "cat"、"人脸"、"logo" 等）
+- **bbox_selection**: 边界框选择（"all" 返回所有框，或指定索引如 "0,2"）
+- **score_threshold**: 置信度阈值（0.0-1.0）
+- **merge_boxes**: 是否合并选定的边界框
+
+#### 4.3 为 SAM2 准备边界框节点
+
+在 ComfyUI 编辑器中添加 `Prepare BBoxes for SAM2` 节点，用于将检测结果转换为 SAM2 节点期望的格式。
+
 ## 工作流示例
 
 ### 文本生图
@@ -69,6 +98,18 @@ git clone https://github.com/111496583yzy/comfyui-modelscope-qwen-image.git comf
 3. 将原始图像连接到编辑节点的 `image` 输入
 4. 设置编辑提示词（如"把狗变成猫"）
 5. 连接输出到 `Preview Image` 节点
+
+### 目标检测
+
+1. 准备一张要检测的图像（使用 `Load Image` 或其他方式）
+2. 添加 `Qwen2.5-VL API Configuration` 节点并配置API参数
+3. 添加 `Qwen2.5-VL API Object Detection` 节点
+4. 将配置节点连接到检测节点的 `qwen_api_config` 输入
+5. 将图像连接到检测节点的 `image` 输入
+6. 设置要检测的目标对象（如 "cat"、"人脸"、"logo" 等）
+7. 连接检测节点的 `preview` 输出到 `Preview Image` 节点查看检测结果
+8. 连接检测节点的 `bboxes` 输出到 `Prepare BBoxes for SAM2` 节点（可选）
+9. 将 SAM2 准备节点的输出连接到 SAM2 分割节点进行进一步处理
 
 ## 注意事项
 
