@@ -7,7 +7,7 @@ try:
     from openai import OpenAI
     OPENAI_AVAILABLE = True
 except ImportError:
-    print("⚠️ 警告: 未安装openai库，文本生成功能将不可用")
+    print("警告: 未安装openai库，文本生成功能将不可用")
     print("请运行: pip install openai")
     OPENAI_AVAILABLE = False
     OpenAI = None
@@ -134,16 +134,16 @@ class QwenTextNode:
         saved_token = load_api_token()
         if api_token != saved_token:
             if save_api_token(api_token):
-                print("✅ API Token已自动保存")
+                print("API Token已自动保存")
             else:
-                print("⚠️ API Token保存失败，但不影响当前使用")
+                print("API Token保存失败，但不影响当前使用")
         
         try:
             print(f"💬 开始文本生成...")
             print(f"🤖 模型: {model}")
             print(f"📝 用户提示: {user_prompt[:50]}...")
-            print(f"⚙️ 系统提示: {system_prompt[:50]}...")
-            print(f"🌡️ 温度: {temperature}")
+            print(f"系统提示: {system_prompt[:50]}...")
+            print(f"温度: {temperature}")
             print(f"📊 最大tokens: {max_tokens}")
             print(f"⚡ 流式输出: {stream}")
             
@@ -192,19 +192,19 @@ class QwenTextNode:
                         full_response += content
                         print(content, end='', flush=True)
                 
-                print(f"\n✅ 流式生成完成!")
+                print(f"\n流式生成完成!")
                 print(f"📄 总长度: {len(full_response)} 字符")
                 return (full_response,)
             else:
                 result = response.choices[0].message.content
-                print(f"✅ 文本生成完成!")
+                print(f"文本生成完成!")
                 print(f"📄 结果长度: {len(result)} 字符")
                 print(f"📝 结果预览: {result[:100]}...")
                 return (result,)
             
         except Exception as e:
             error_msg = f"文本生成失败: {str(e)}"
-            print(f"❌ {error_msg}")
+            print(f"{error_msg}")
             return (error_msg,)
 
 if OPENAI_AVAILABLE:

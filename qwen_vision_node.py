@@ -13,7 +13,7 @@ try:
     from openai import OpenAI
     OPENAI_AVAILABLE = True
 except ImportError:
-    print("⚠️ 警告: 未安装openai库，图生文功能将不可用")
+    print("警告: 未安装openai库，图生文功能将不可用")
     print("请运行: pip install openai")
     OPENAI_AVAILABLE = False
     OpenAI = None
@@ -155,12 +155,12 @@ class QwenVisionNode:
         saved_token = load_api_token()
         if api_token != saved_token:
             if save_api_token(api_token):
-                print("✅ API Token已自动保存")
+                print("API Token已自动保存")
             else:
-                print("⚠️ API Token保存失败，但不影响当前使用")
+                print("API Token保存失败，但不影响当前使用")
         
         try:
-            print(f"🔍 开始分析图像...")
+            print(f"开始分析图像...")
             print(f"📝 提示词: {prompt}")
             print(f"🤖 模型: {model}")
             
@@ -174,7 +174,7 @@ class QwenVisionNode:
                 seed = random_seed
             
             image_url = tensor_to_base64_url(image)
-            print(f"🖼️ 图像已转换为base64格式")
+            print(f"图像已转换为base64格式")
             
             client = OpenAI(
                 base_url='https://api-inference.modelscope.cn/v1',
@@ -206,14 +206,14 @@ class QwenVisionNode:
             )
             
             description = response.choices[0].message.content
-            print(f"✅ 分析完成!")
+            print(f"分析完成!")
             print(f"📄 结果: {description[:100]}...")
             
             return (description,)
             
         except Exception as e:
             error_msg = f"图像分析失败: {str(e)}"
-            print(f"❌ {error_msg}")
+            print(f"{error_msg}")
             return (error_msg,)
 
 if OPENAI_AVAILABLE:

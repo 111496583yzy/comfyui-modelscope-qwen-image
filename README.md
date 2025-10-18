@@ -111,6 +111,51 @@ git clone https://github.com/111496583yzy/comfyui-modelscope-qwen-image.git comf
 8. 连接检测节点的 `bboxes` 输出到 `Prepare BBoxes for SAM2` 节点（可选）
 9. 将 SAM2 准备节点的输出连接到 SAM2 分割节点进行进一步处理
 
+## Cloudinary 视频存储配置
+
+本插件支持将视频上传到 Cloudinary 云存储服务，以获得更稳定的视频URL用于AI分析。
+
+### 配置步骤
+
+#### 1. 注册 Cloudinary 账号
+- 访问 [Cloudinary官网](https://cloudinary.com/)
+- 注册免费账号（每月有免费额度）
+
+#### 2. 获取 API 凭据
+登录 Cloudinary 控制台后，在 **API Keys** 页面可以找到：
+- **Cloud Name**: 你的云名称（在页面顶部显示）
+- **API Key**: API密钥（在表格的 "API Key" 列中）
+- **API Secret**: API密钥密码（在表格的 "API Secret" 列中，点击眼睛图标显示）
+
+**重要**: API Secret 默认被星号隐藏，需要点击旁边的眼睛图标 👁️ 才能看到完整内容！
+
+#### 3. 配置 config.json
+在 `config.json` 文件中添加以下配置：
+
+```json
+{
+  "cloudinary_cloud_name": "你的云名称",
+  "cloudinary_api_key": "你的API密钥", 
+  "cloudinary_api_secret": "点击眼睛图标后显示的完整密钥"
+}
+```
+
+### 使用说明
+- 配置完成后，插件会优先使用 Cloudinary 上传视频
+- 如果 Cloudinary 上传失败，会自动回退到 base64 方式直接传输视频数据
+- 上传成功后，会使用 Cloudinary 的 HTTPS URL 进行AI分析
+
+### 优势
+- **更稳定**: Cloudinary 是专业的云存储服务
+- **更快速**: 全球CDN加速
+- **更安全**: HTTPS 加密传输
+- **更可靠**: 99.9% 服务可用性
+
+### 注意事项
+- 请妥善保管你的 API 凭据，不要泄露给他人
+- 免费账号有使用限制，超出后需要付费
+- 建议定期检查 Cloudinary 控制台的使用情况
+
 ## 注意事项
 
 - API 调用需要网络连接

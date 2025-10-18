@@ -165,9 +165,9 @@ class QwenImageNode:
         saved_token = load_api_token()
         if api_token != saved_token:
             if save_api_token(api_token):
-                print("✅ API Token已自动保存")
+                print("API Token已自动保存")
             else:
-                print("⚠️ API Token保存失败，但不影响当前使用")
+                print("API Token保存失败，但不影响当前使用")
         try:
             url = 'https://api-inference.modelscope.cn/v1/images/generations'
             payload = {
@@ -203,7 +203,7 @@ class QwenImageNode:
                 timeout=config.get("timeout", 60)
             )
             if submission_response.status_code == 400:
-                print("⚠️ 提交失败，尝试使用最小参数重试...")
+                print("提交失败，尝试使用最小参数重试...")
                 minimal_payload = {
                     'model': model,
                     'prompt': prompt
@@ -241,7 +241,7 @@ class QwenImageNode:
                         if not output_images:
                             raise Exception("任务成功但未返回图片URL")
                         image_url = output_images[0]
-                        print("✅ 任务完成，开始下载图片...")
+                        print("任务完成，开始下载图片...")
                         break
                     if status == 'FAILED':
                         raise Exception(f"任务失败: {task_data}")
@@ -250,7 +250,7 @@ class QwenImageNode:
                     time.sleep(5)
             elif 'images' in submission_json and len(submission_json['images']) > 0:
                 image_url = submission_json['images'][0]['url']
-                print(f"⬇️ 下载生成的图片...")
+                print(f"下载生成的图片...")
             else:
                 raise Exception(f"未识别的API返回格式: {submission_json}")
             img_response = requests.get(image_url, timeout=config.get("image_download_timeout", 30))
@@ -343,9 +343,9 @@ class QwenImageEditNode:
         saved_token = load_api_token()
         if api_token != saved_token:
             if save_api_token(api_token):
-                print("✅ API Token已自动保存")
+                print("API Token已自动保存")
             else:
-                print("⚠️ API Token保存失败，但不影响当前使用")
+                print("API Token保存失败，但不影响当前使用")
 
         try:
             # 将图像转换为临时文件并上传获取URL
@@ -362,7 +362,7 @@ class QwenImageEditNode:
                 i = 255. * img.cpu().numpy()
                 img_pil = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
                 img_pil.save(temp_img_path)
-                print(f"✅ 图像已保存到临时文件: {temp_img_path}")
+                print(f"图像已保存到临时文件: {temp_img_path}")
                 
                 # 上传图像到kefan.cn获取URL
                 upload_url = 'https://ai.kefan.cn/api/upload/local'
@@ -378,17 +378,17 @@ class QwenImageEditNode:
                         # 修复这里的判断逻辑，kefan.cn返回code=200表示成功
                         if upload_data.get('success') == True and 'data' in upload_data:
                             image_url = upload_data['data']
-                            print(f"✅ 图像已上传成功，获取URL: {image_url}")
+                            print(f"图像已上传成功，获取URL: {image_url}")
                         else:
-                            print(f"⚠️ 图像上传返回错误: {upload_response.text}")
+                            print(f"图像上传返回错误: {upload_response.text}")
                     else:
-                        print(f"⚠️ 图像上传失败: {upload_response.status_code}, {upload_response.text}")
+                        print(f"图像上传失败: {upload_response.status_code}, {upload_response.text}")
             except Exception as e:
-                print(f"⚠️ 图像上传异常: {str(e)}")
+                print(f"图像上传异常: {str(e)}")
             
             # 如果上传失败，回退到base64
             if not image_url:
-                print("⚠️ 图像URL获取失败，回退到使用base64")
+                print("图像URL获取失败，回退到使用base64")
                 image_data = tensor_to_base64_url(image)
                 payload = {
                     'model': model,
@@ -414,7 +414,7 @@ class QwenImageEditNode:
                 
             if steps != 30:
                 payload['steps'] = steps
-                print(f"🔄 采样步数: {steps}")
+                print(f"采样步数: {steps}")
                 
             if guidance != 3.5:
                 payload['guidance'] = guidance
@@ -430,8 +430,8 @@ class QwenImageEditNode:
                 'X-ModelScope-Async-Mode': 'true'
             }
             
-            print(f"🖼️ 开始编辑图片...")
-            print(f"✏️ 编辑提示: {prompt}")
+            print(f"开始编辑图片...")
+            print(f"编辑提示: {prompt}")
             
             url = 'https://api-inference.modelscope.cn/v1/images/generations'
             submission_response = requests.post(
@@ -474,7 +474,7 @@ class QwenImageEditNode:
                         if not output_images:
                             raise Exception("任务成功但未返回图片URL")
                         result_image_url = output_images[0]
-                        print("✅ 任务完成，开始下载编辑后的图片...")
+                        print("任务完成，开始下载编辑后的图片...")
                         break
                         
                     if status == 'FAILED':
