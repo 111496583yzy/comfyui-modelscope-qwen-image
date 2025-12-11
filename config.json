@@ -16,8 +16,8 @@
   "default_user_prompt": "你好，请介绍一下你自己。",
   "default_text_seed": -1,
   "default_vision_seed": -1,
-  "api_token": "ms-121ef2b4-cf3d-4f5c-9e40-270a2a791f93",
+  "api_token": "",
   "cloudinary_cloud_name": "dxao8lzi7",
   "cloudinary_api_key": "259917876186436",
-  "cloudinary_api_secret": "gG0za5UmLoQeYRl2UAhY1OLLtHg"
+  "cloudinary_api_secret": ""
 }
