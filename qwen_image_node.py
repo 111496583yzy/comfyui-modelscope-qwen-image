@@ -291,6 +291,8 @@ class QwenImageEditNode:
                 }),
             },
             "optional": {
+                "image_2": ("IMAGE",),
+                "image_3": ("IMAGE",),
                 "model": ("STRING", {
                     "default": "Qwen/Qwen-Image-Edit"
                 }),
@@ -336,7 +338,7 @@ class QwenImageEditNode:
     CATEGORY = "QwenImage"
 
     def edit_image(self, image, prompt, api_token, model="Qwen/Qwen-Image-Edit", negative_prompt="", 
-                   width=512, height=512, steps=30, guidance=3.5, seed=-1):
+                   width=512, height=512, steps=30, guidance=3.5, seed=-1, image_2=None, image_3=None):
         config = load_config()
         if not api_token or api_token.strip() == "":
             raise Exception("请输入有效的API Token")
@@ -348,59 +350,106 @@ class QwenImageEditNode:
                 print("API Token保存失败，但不影响当前使用")
 
         try:
-            # 将图像转换为临时文件并上传获取URL
-            temp_img_path = None
-            image_url = None
-            try:
-                # 保存图像到临时文件
-                temp_img_path = os.path.join(tempfile.gettempdir(), f"qwen_edit_temp_{int(time.time())}.jpg")
-                if len(image.shape) == 4:
-                    img = image[0]
-                else:
-                    img = image
-                
-                i = 255. * img.cpu().numpy()
-                img_pil = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
-                img_pil.save(temp_img_path)
-                print(f"图像已保存到临时文件: {temp_img_path}")
-                
-                # 上传图像到kefan.cn获取URL
-                upload_url = 'https://ai.kefan.cn/api/upload/local'
-                with open(temp_img_path, 'rb') as img_file:
-                    files = {'file': img_file}
-                    upload_response = requests.post(
-                        upload_url,
-                        files=files,
-                        timeout=30
-                    )
-                    if upload_response.status_code == 200:
-                        upload_data = upload_response.json()
-                        # 修复这里的判断逻辑，kefan.cn返回code=200表示成功
-                        if upload_data.get('success') == True and 'data' in upload_data:
-                            image_url = upload_data['data']
-                            print(f"图像已上传成功，获取URL: {image_url}")
-                        else:
-                            print(f"图像上传返回错误: {upload_response.text}")
+            # 处理上传多张图片的函数
+            def upload_single_image(img_tensor, index):
+                temp_path = None
+                img_url = None
+                try:
+                    # 保存图像到临时文件
+                    temp_path = os.path.join(tempfile.gettempdir(), f"qwen_edit_temp_{index}_{int(time.time())}.jpg")
+                    if len(img_tensor.shape) == 4:
+                        img = img_tensor[0]
                     else:
-                        print(f"图像上传失败: {upload_response.status_code}, {upload_response.text}")
-            except Exception as e:
-                print(f"图像上传异常: {str(e)}")
+                        img = img_tensor
+                    
+                    i = 255. * img.cpu().numpy()
+                    img_pil = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
+                    img_pil.save(temp_path)
+                    print(f"图像{index}已保存到临时文件: {temp_path}")
+                    
+                    # 上传图像到kefan.cn获取URL
+                    upload_url = 'https://ai.kefan.cn/api/upload/local'
+                    with open(temp_path, 'rb') as img_file:
+                        files = {'file': img_file}
+                        upload_response = requests.post(
+                            upload_url,
+                            files=files,
+                            timeout=30
+                        )
+                        if upload_response.status_code == 200:
+                            upload_data = upload_response.json()
+                            if upload_data.get('success') == True and 'data' in upload_data:
+                                img_url = upload_data['data']
+                                print(f"图像{index}已上传成功，获取URL: {img_url}")
+                            else:
+                                print(f"图像{index}上传返回错误: {upload_response.text}")
+                        else:
+                            print(f"图像{index}上传失败: {upload_response.status_code}, {upload_response.text}")
+                except Exception as e:
+                    print(f"图像{index}上传异常: {str(e)}")
+                
+                return temp_path, img_url
             
-            # 如果上传失败，回退到base64
-            if not image_url:
-                print("图像URL获取失败，回退到使用base64")
-                image_data = tensor_to_base64_url(image)
-                payload = {
-                    'model': model,
-                    'prompt': prompt,
-                    'image': image_data
-                }
+            # 上传主图像
+            temp_img_path, image_url = upload_single_image(image, 1)
+            temp_paths = [temp_img_path]
+            
+            # 上传第二张图像(如果提供)
+            image_2_url = None
+            if image_2 is not None:
+                temp_path_2, image_2_url = upload_single_image(image_2, 2)
+                if temp_path_2:
+                    temp_paths.append(temp_path_2)
+            
+            # 上传第三张图像(如果提供)
+            image_3_url = None
+            if image_3 is not None:
+                temp_path_3, image_3_url = upload_single_image(image_3, 3)
+                if temp_path_3:
+                    temp_paths.append(temp_path_3)
+            
+            # 构建payload - 根据官方文档，多图使用 image_url 数组
+            # 收集所有图片URL
+            image_urls = []
+            image_base64s = []
+            
+            if image_url:
+                image_urls.append(image_url)
             else:
-                payload = {
-                    'model': model,
-                    'prompt': prompt,
-                    'image_url': image_url
-                }
+                image_base64s.append(tensor_to_base64_url(image))
+            
+            # 添加第二张图片
+            if image_2 is not None:
+                if image_2_url:
+                    image_urls.append(image_2_url)
+                    print(f"✅ 已添加第二张图片URL")
+                else:
+                    image_base64s.append(tensor_to_base64_url(image_2))
+                    print(f"✅ 已添加第二张图片(base64)")
+            
+            # 添加第三张图片
+            if image_3 is not None:
+                if image_3_url:
+                    image_urls.append(image_3_url)
+                    print(f"✅ 已添加第三张图片URL")
+                else:
+                    image_base64s.append(tensor_to_base64_url(image_3))
+                    print(f"✅ 已添加第三张图片(base64)")
+            
+            # 构建payload
+            payload = {
+                'model': model,
+                'prompt': prompt
+            }
+            
+            # 根据官方文档，image_url 始终使用数组格式（即使单张图片）
+            if len(image_urls) > 0:
+                payload['image_url'] = image_urls  # 统一使用数组格式
+                print(f"📸 使用URL模式，共{len(image_urls)}张图片: {image_urls}")
+            elif len(image_base64s) > 0:
+                # Base64模式也尝试使用数组
+                payload['image'] = image_base64s
+                print(f"📸 使用Base64模式，共{len(image_base64s)}张图片")
             
             if negative_prompt.strip():
                 payload['negative_prompt'] = negative_prompt
@@ -500,12 +549,13 @@ class QwenImageEditNode:
             image_np = np.array(pil_image).astype(np.float32) / 255.0
             image_tensor = torch.from_numpy(image_np)[None,]
             
-            # 清理临时文件
-            if temp_img_path and os.path.exists(temp_img_path):
-                try:
-                    os.remove(temp_img_path)
-                except:
-                    pass
+            # 清理所有临时文件
+            for temp_path in temp_paths:
+                if temp_path and os.path.exists(temp_path):
+                    try:
+                        os.remove(temp_path)
+                    except:
+                        pass
             
             print(f"🎉 图片编辑完成！")
             return (image_tensor,)
