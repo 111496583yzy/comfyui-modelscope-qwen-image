@@ -182,6 +182,10 @@ class QwenVideoNode:
                 }),
             },
             "optional": {
+                "system_prompt": ("STRING", {
+                    "multiline": True,
+                    "default": config.get("default_system_prompt", "You are a helpful assistant.")
+                }),
                 "video": ("VIDEO",),
                 "video_path": ("STRING", {
                     "default": "",
@@ -226,7 +230,7 @@ class QwenVideoNode:
     FUNCTION = "analyze_video"
     CATEGORY = "QwenImage"
 
-    def analyze_video(self, prompt="", api_token="", video=None, video_path="", model="stepfun-ai/step3", max_tokens=1000, temperature=0.7, seed=-1, cloudinary_cloud_name="", cloudinary_api_key="", cloudinary_api_secret="", error_message=""):
+    def analyze_video(self, prompt="", api_token="", system_prompt="You are a helpful assistant.", video=None, video_path="", model="stepfun-ai/step3", max_tokens=1000, temperature=0.7, seed=-1, cloudinary_cloud_name="", cloudinary_api_key="", cloudinary_api_secret="", error_message=""):
         if not OPENAI_AVAILABLE:
             return ("请先安装openai库: pip install openai",)
         
@@ -319,6 +323,8 @@ class QwenVideoNode:
         try:
             print(f"🎬 开始分析视频...")
             print(f"📝 提示词: {prompt}")
+            if system_prompt:
+                print(f"系统提示: {system_prompt[:50]}...")
             print(f"🤖 模型: {model}")
             print(f"视频路径: {actual_video_path}")
             
@@ -359,13 +365,23 @@ class QwenVideoNode:
                 api_key=api_token
             )
             
-            messages = [{
+            messages = []
+            
+            # 如果有系统提示词，添加到messages中
+            if system_prompt and system_prompt.strip():
+                messages.append({
+                    'role': 'system',
+                    'content': system_prompt
+                })
+            
+            # 添加用户消息（包含文本和视频）
+            messages.append({
                 'role': 'user',
                 'content': [{
                     'type': 'text',
                     'text': prompt,
                 }, video_content],
-            }]
+            })
             
             print(f"🚀 发送API请求...")
             

@@ -116,6 +116,10 @@ class QwenVisionNode:
                 }),
             },
             "optional": {
+                "system_prompt": ("STRING", {
+                    "multiline": True,
+                    "default": config.get("default_system_prompt", "You are a helpful assistant.")
+                }),
                 "model": ("STRING", {
                     "default": config.get("default_vision_model", "stepfun-ai/step3")
                 }),
@@ -143,7 +147,7 @@ class QwenVisionNode:
     FUNCTION = "analyze_image"
     CATEGORY = "QwenImage"
 
-    def analyze_image(self, image=None, prompt="", api_token="", model="stepfun-ai/step3", max_tokens=1000, temperature=0.7, seed=-1, error_message=""):
+    def analyze_image(self, image=None, prompt="", api_token="", system_prompt="You are a helpful assistant.", model="stepfun-ai/step3", max_tokens=1000, temperature=0.7, seed=-1, error_message=""):
         if not OPENAI_AVAILABLE:
             return ("请先安装openai库: pip install openai",)
         
@@ -162,6 +166,8 @@ class QwenVisionNode:
         try:
             print(f"开始分析图像...")
             print(f"📝 提示词: {prompt}")
+            if system_prompt:
+                print(f"系统提示: {system_prompt[:50]}...")
             print(f"🤖 模型: {model}")
             
             # 处理随机种子
@@ -181,7 +187,17 @@ class QwenVisionNode:
                 api_key=api_token
             )
             
-            messages = [{
+            messages = []
+            
+            # 如果有系统提示词，添加到messages中
+            if system_prompt and system_prompt.strip():
+                messages.append({
+                    'role': 'system',
+                    'content': system_prompt
+                })
+            
+            # 添加用户消息（包含文本和图像）
+            messages.append({
                 'role': 'user',
                 'content': [{
                     'type': 'text',
@@ -192,7 +208,7 @@ class QwenVisionNode:
                         'url': image_url,
                     },
                 }],
-            }]
+            })
             
             print(f"🚀 发送API请求...")
             
