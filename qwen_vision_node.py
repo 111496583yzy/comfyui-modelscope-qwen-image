@@ -116,6 +116,8 @@ class QwenVisionNode:
                 }),
             },
             "optional": {
+                "image_2": ("IMAGE",),
+                "image_3": ("IMAGE",),
                 "system_prompt": ("STRING", {
                     "multiline": True,
                     "default": config.get("default_system_prompt", "You are a helpful assistant.")
@@ -147,7 +149,7 @@ class QwenVisionNode:
     FUNCTION = "analyze_image"
     CATEGORY = "QwenImage"
 
-    def analyze_image(self, image=None, prompt="", api_token="", system_prompt="You are a helpful assistant.", model="stepfun-ai/step3", max_tokens=1000, temperature=0.7, seed=-1, error_message=""):
+    def analyze_image(self, image=None, prompt="", api_token="", system_prompt="You are a helpful assistant.", model="stepfun-ai/step3", max_tokens=1000, temperature=0.7, seed=-1, error_message="", image_2=None, image_3=None):
         if not OPENAI_AVAILABLE:
             return ("请先安装openai库: pip install openai",)
         
@@ -179,8 +181,18 @@ class QwenVisionNode:
                 print(f"🎲 使用随机种子: {random_seed}")
                 seed = random_seed
             
-            image_url = tensor_to_base64_url(image)
-            print(f"图像已转换为base64格式")
+            # 处理所有输入的图像
+            images = [image]
+            if image_2 is not None:
+                images.append(image_2)
+            if image_3 is not None:
+                images.append(image_3)
+                
+            image_urls = []
+            for i, img in enumerate(images):
+                url = tensor_to_base64_url(img)
+                image_urls.append(url)
+                print(f"图像 {i+1} 已转换为base64格式")
             
             client = OpenAI(
                 base_url='https://api-inference.modelscope.cn/v1',
@@ -196,18 +208,25 @@ class QwenVisionNode:
                     'content': system_prompt
                 })
             
+            # 构建用户消息内容
+            user_content = [{
+                'type': 'text',
+                'text': prompt,
+            }]
+            
+            # 添加所有图像
+            for url in image_urls:
+                user_content.append({
+                    'type': 'image_url',
+                    'image_url': {
+                        'url': url,
+                    },
+                })
+            
             # 添加用户消息（包含文本和图像）
             messages.append({
                 'role': 'user',
-                'content': [{
-                    'type': 'text',
-                    'text': prompt,
-                }, {
-                    'type': 'image_url',
-                    'image_url': {
-                        'url': image_url,
-                    },
-                }],
+                'content': user_content,
             })
             
             print(f"🚀 发送API请求...")
