@@ -163,6 +163,23 @@ git clone https://github.com/111496583yzy/comfyui-modelscope-qwen-image.git comf
 - 请遵守魔搭社区的使用政策
 - 如遇到错误代码429，表示请求过多，需要等待一段时间后重试
 
+## 像素星云 (Pixel Nebula)
+
+探索更多强大 AI 功能，请访问我们的网站：[像素星云](https://www.yzycolour.top/#/)
+
+像素星云是一个集成了多种 AI 功能的导航平台，为您提供：
+
+- **AI 生图**: 释放创意，一键生成精美图像
+- **图像处理**: 智能修复、增强、调色
+- **人像处理**: 美颜、换脸、风格化
+- **3D 生成**: 文字/图片生成 3D 模型
+- **AI 视频**: 静态图片动起来，生成精彩视频
+- **电商创作**: 快速生成模特图、商品图
+- **AI 助手**: 您的智能工作伙伴
+- **音色克隆**: 定制专属语音
+
+立即体验：[https://www.yzycolour.top/#/](https://www.yzycolour.top/#/)
+
 ## License
 
 MIT
